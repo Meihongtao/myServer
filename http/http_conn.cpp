@@ -17,6 +17,8 @@ void user_conn::init(int epollfd,int fd_,Timer *timer_,bool is_et){
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
     // 设置定时器
     timer = timer_;
+    // 连接用户数
+    user_count += 1;
 }
 
 void user_conn::read()
@@ -27,7 +29,8 @@ void user_conn::read()
         if(size == 0){
             epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, nullptr);
             close(fd);
-
+             // 连接用户数
+            user_count -= 1;
             std::cout << "Connection closed" << std::endl;
             break;
         }
@@ -37,10 +40,11 @@ void user_conn::read()
                 event.data.fd = fd;
                 event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
                 epoll_ctl(m_epollFd,EPOLL_CTL_MOD,fd,&event);
+                break;
             }
         }
         else{
-            std::cout << "Get data" << readBuf <<std::endl;
+            std::cout << "Get data " << readBuf <<std::endl;
             // 回显客户端发送的数据
             send(fd, readBuf, size, 0);
     }

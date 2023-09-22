@@ -10,6 +10,7 @@
 class user_conn{
 public:
     static int m_epollFd;
+    static int user_count;
 private:
     static const int READ_BUFFER = 2048;
     static const int WRITE_BUFFER = 2048;

@@ -21,7 +21,7 @@ const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
 
 
-
+extern int user_conn::user_count = 0;
 extern int user_conn::m_epollFd = -1;
 
 int main() {
@@ -38,7 +38,7 @@ int main() {
 
     // 绑定监听套接字到本地地址和端口
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(12346);
+    serverAddr.sin_port = htons(12345);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
@@ -76,7 +76,7 @@ int main() {
     auto time_out = 0;
     char buffer[BUFFER_SIZE];
     user_conn *users =new user_conn[MAX_EVENTS];
-
+    struct epoll_event events[MAX_EVENTS];
 
     while (true) {
         // 检查定时器队列，关闭超时连接
@@ -90,13 +90,13 @@ int main() {
                 timerQueue.pop();
                 
             } else {
-                auto time_out = timer->expiry - std::chrono::steady_clock::now();
+                // auto time_out = timer->expiry - std::chrono::steady_clock::now();
                 break; // 因为小根堆中的定时器是按时间排序的，所以可以提前退出循环
             }
         }
 
 
-        struct epoll_event events[MAX_EVENTS];
+       
         int numEvents = epoll_wait(epollFd, events, MAX_EVENTS, time_out);
 
         for (int i = 0; i < numEvents; ++i) {
@@ -105,9 +105,10 @@ int main() {
                 int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
                 Timer *timer =new Timer();
                 timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(5); // 60秒超时
+                timer->fd = clientSocket;
                 timerQueue.push(timer);
                 (users[clientSocket]).init(epollFd,clientSocket,timer,IS_ET);
-                timer->fd = clientSocket;
+                
                 std::cout << "Accepted new connection from "
                           << inet_ntoa(clientAddr.sin_addr)
                           << ":" << ntohs(clientAddr.sin_port) << std::endl;

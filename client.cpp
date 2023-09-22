@@ -16,7 +16,7 @@ int main() {
     // 设置服务器地址和端口
     sockaddr_in serverAddress{};
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(12345);
+    serverAddress.sin_port = htons(12346);
     if (inet_pton(AF_INET, "127.0.0.1", &(serverAddress.sin_addr)) <= 0) {
         std::cerr << "Invalid address/Address not supported" << std::endl;
         return -1;
@@ -38,7 +38,7 @@ int main() {
 
         std::cout << "Message sent: " << message << std::endl;
 
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(20));
     }
 
     // 关闭套接字
