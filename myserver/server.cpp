@@ -16,13 +16,14 @@
 
 
 #define IS_ET true
+#define TIMEOUT 60
 
 const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
 
 
-extern int user_conn::user_count = 0;
-extern int user_conn::m_epollFd = -1;
+int user_conn::user_count = 0;
+int user_conn::m_epollFd = -1;
 
 int main() {
     int serverSocket, clientSocket;
@@ -80,20 +81,20 @@ int main() {
 
     while (true) {
         // 检查定时器队列，关闭超时连接
-        while (!timerQueue.empty()) {
-            Timer *timer = timerQueue.top();
-            if (std::chrono::steady_clock::now() >= timer->expiry) {
-                int close_fd = timer->fd;
-                epoll_ctl(epollFd, EPOLL_CTL_DEL, close_fd, nullptr);
-                close(close_fd);
-                std::cout << "Connection timed out and closed" << std::endl;
-                timerQueue.pop();
+        // while (!timerQueue.empty()) {
+        //     Timer *timer = timerQueue.top();
+        //     if (std::chrono::steady_clock::now() >= timer->expiry) {
+        //         int close_fd = timer->fd;
+        //         epoll_ctl(epollFd, EPOLL_CTL_DEL, close_fd, nullptr);
+        //         close(close_fd);
+        //         std::cout << "Connection timed out and closed" << std::endl;
+        //         timerQueue.pop();
                 
-            } else {
-                // auto time_out = timer->expiry - std::chrono::steady_clock::now();
-                break; // 因为小根堆中的定时器是按时间排序的，所以可以提前退出循环
-            }
-        }
+        //     } else {
+        //         // auto time_out = timer->expiry - std::chrono::steady_clock::now();
+        //         break; // 因为小根堆中的定时器是按时间排序的，所以可以提前退出循环
+        //     }
+        // }
 
 
        
@@ -104,7 +105,7 @@ int main() {
                 // 新的客户端连接请求
                 int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
                 Timer *timer =new Timer();
-                timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(5); // 60秒超时
+                timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(TIMEOUT); // 60秒超时
                 timer->fd = clientSocket;
                 timerQueue.push(timer);
                 (users[clientSocket]).init(epollFd,clientSocket,timer,IS_ET);
@@ -118,7 +119,7 @@ int main() {
             } else if(events[i].events & EPOLLIN) {
                 // 客户端有数据可读
                 int fd_ = events[i].data.fd;
-                users[fd_].timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+                users[fd_].timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(TIMEOUT);
                 users[fd_].read();
                 // int bytesRead = recv(fd_, buffer, BUFFER_SIZE, 0);
 

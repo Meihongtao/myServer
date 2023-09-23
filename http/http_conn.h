@@ -1,3 +1,6 @@
+#ifndef HTTPCONN_H
+#define HTTPCONN_H
+
 #include<iostream>
 #include<sys/epoll.h>
 #include<fcntl.h>
@@ -5,7 +8,7 @@
 #include<sys/socket.h>
 #include<cstring>
 #include "../timer/time_heap.h"
-
+#include "http_request.h"
 
 class user_conn{
 public:
@@ -19,10 +22,12 @@ public:
     user_conn(){};
     void init(int epollfd,int fd_,Timer *timer_,bool is_et);
     
+    // 接收请求处理并回复客户端
     void process();
 
+    // 读取并解析http请求
     void read();
-
+    // 响应资源
     void write();   
 
 public:
@@ -35,3 +40,4 @@ public:
     
 };
 
+#endif

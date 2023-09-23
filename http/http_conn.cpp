@@ -24,8 +24,11 @@ void user_conn::init(int epollfd,int fd_,Timer *timer_,bool is_et){
 void user_conn::read()
 {
     memset(readBuf,'\0',READ_BUFFER);
+    
+    
     while(1){
-        int size = recv(this->fd,this->readBuf,this->READ_BUFFER-1,0);
+        int size = recv(this->fd,this->readBuf,this->READ_BUFFER,0);
+
         if(size == 0){
             epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, nullptr);
             close(fd);
@@ -44,14 +47,19 @@ void user_conn::read()
             }
         }
         else{
-            std::cout << "Get data " << readBuf <<std::endl;
-            // 回显客户端发送的数据
-            send(fd, readBuf, size, 0);
-    }
+            
+
+           
+                std::cout << "Get data " << readBuf <<std::endl;
+                // 回显客户端发送的数据
+                send(fd, readBuf, size, 0);
+        
+            }
+            
+        }
     }
     
     
-}
 
 void user_conn::write()
 {
