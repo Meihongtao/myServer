@@ -26,9 +26,9 @@ public:
         return method;
     }
 
-    std::string getMethod()
+    std::string getResource()
     {
-        return method;
+        return path;
     }
 
     std::string getBody(){

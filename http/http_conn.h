@@ -9,6 +9,8 @@
 #include<cstring>
 #include "../timer/time_heap.h"
 #include "http_request.h"
+#include "http_response.h"
+
 
 class user_conn{
 public:
@@ -17,6 +19,7 @@ public:
 private:
     static const int READ_BUFFER = 2048;
     static const int WRITE_BUFFER = 2048;
+    
     
 public:
     user_conn(){};
@@ -35,6 +38,8 @@ public:
     char readBuf[READ_BUFFER];
     char writeBuf[WRITE_BUFFER];
 
+    HttpRequestParser requestParser;
+    HttpResponse requestResponser;
     Timer *timer = nullptr;
     int fd;
     

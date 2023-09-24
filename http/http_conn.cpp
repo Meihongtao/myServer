@@ -19,6 +19,9 @@ void user_conn::init(int epollfd,int fd_,Timer *timer_,bool is_et){
     timer = timer_;
     // 连接用户数
     user_count += 1;
+    // 初始化http解析
+    requestParser = HttpRequestParser();
+    requestResponser = HttpResponse();
 }
 
 void user_conn::read()
@@ -47,12 +50,14 @@ void user_conn::read()
             }
         }
         else{
-            
 
-           
-                std::cout << "Get data " << readBuf <<std::endl;
+                requestParser.parse(readBuf);
+                std::cout << requestParser.getMethod() << " " << requestParser.getResource() << " " << requestParser.getBody() << std::endl;
+                std::string s = "<head><body>Here is index page</body></head>";
+                requestResponser.init(200,s);
+                // std::cout << "Get data " << readBuf <<std::endl;
                 // 回显客户端发送的数据
-                send(fd, readBuf, size, 0);
+                send(fd, (char *)requestResponser.toString().c_str(), size, 0);
         
             }
             
