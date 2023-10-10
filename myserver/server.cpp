@@ -18,7 +18,7 @@
 #define IS_ET true
 #define TIMEOUT 60
 
-const int MAX_EVENTS = 100;
+const int MAX_EVENTS = 10000;
 const int BUFFER_SIZE = 1024;
 
 
@@ -74,7 +74,7 @@ int main() {
 
     // 创建小根堆（模拟）
     std::priority_queue<Timer*, std::vector<Timer*>, std::greater<Timer*>> timerQueue;
-    auto time_out = 0;
+    auto time_out = -1;
     char buffer[BUFFER_SIZE];
     user_conn *users =new user_conn[MAX_EVENTS];
     struct epoll_event events[MAX_EVENTS];
