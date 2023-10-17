@@ -12,26 +12,27 @@
 #include "http_response.h"
 
 
-class user_conn{
+class HttpConn{
 public:
     static int m_epollFd;
     static int user_count;
-private:
     static const int READ_BUFFER = 2048;
     static const int WRITE_BUFFER = 2048;
+private:
+    
     
     
 public:
-    user_conn(){};
-    void init(int epollfd,int fd_,Timer *timer_,bool is_et);
-    
+    HttpConn(){};
+    void init(int fd_,Timer *timer_);
+    void Close();
     // 接收请求处理并回复客户端
     void process();
 
     // 读取并解析http请求
-    void read();
+    int Read(int &Error);
     // 响应资源
-    void write();   
+    void Write();   
 
 public:
 

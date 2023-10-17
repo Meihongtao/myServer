@@ -12,21 +12,16 @@
 
 #include "../pool/threadsPool.h"
 #include "../http/http_conn.h"
+#include "server.h"
 // #include "../timer/time_heap.h"
 
 
 #define IS_ET true
 #define TIMEOUT 60
 
-const int MAX_EVENTS = 10000;
-const int BUFFER_SIZE = 1024;
 
-
-int user_conn::user_count = 0;
-int user_conn::m_epollFd = -1;
-
-int main() {
-    int serverSocket, clientSocket;
+bool myServer::initListen()
+{
     struct sockaddr_in serverAddr, clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
 
@@ -34,113 +29,139 @@ int main() {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == -1) {
         std::cerr << "Failed to create socket" << std::endl;
-        return 1;
+        return false;
     }
 
     // 绑定监听套接字到本地地址和端口
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(12345);
+    serverAddr.sin_port = htons(12349);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
         std::cerr << "Failed to bind socket" << std::endl;
-        return 1;
+        return false;
     }
 
     // 开始监听连接
     if (listen(serverSocket, 5) == -1) {
         std::cerr << "Failed to listen on socket" << std::endl;
-        return 1;
+        return false;
     }
+    // ET 模式
+    epoller->addFd(serverSocket,EPOLLIN);
+    fcntl(serverSocket, F_SETFL, fcntl(serverSocket, F_GETFL, 0) | O_NONBLOCK);
+}
 
-    // 创建 epoll 实例
-    int epollFd = epoll_create1(0);
-    if (epollFd == -1) {
-        std::cerr << "Failed to create epoll instance" << std::endl;
-        return 1;
-    }
+void myServer::start()
+{
+    while(1){
+        int num = epoller->Wait(-1);
+        if(num == -1){
+            printf("epoll wait error!\n");
+            break;
+        }
+        printf("num = %d\n",num);
+        for(int i=0;i<num;i++){
+            int fd = epoller->getFd(i);
+            u_int32_t event = epoller->getEvent(i);
+            if(fd == serverSocket){
+                connHandler();
+            }
+            else if(event & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+                // close fd
+                closeHandler(users[fd]);
+            }
+            else if(event & EPOLLIN){
+                // read fd
+                // printf("%d\n",fd);
+                // auto func = std::bind(&myServer::readHandler,this,users[fd]);
+                pool->addTask([this,fd](){
+                   readHandler(users[fd]);
+                });
 
-    user_conn::m_epollFd = epollFd;
-
-    // 添加监听套接字到 epoll 实例中
-    struct epoll_event event;
-    event.data.fd = serverSocket;
-    event.events = EPOLLIN;
-
-    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverSocket, &event) == -1) {
-        std::cerr << "Failed to add server socket to epoll" << std::endl;
-        return 1;
-    }
-
-    // 创建小根堆（模拟）
-    std::priority_queue<Timer*, std::vector<Timer*>, std::greater<Timer*>> timerQueue;
-    auto time_out = -1;
-    char buffer[BUFFER_SIZE];
-    user_conn *users =new user_conn[MAX_EVENTS];
-    struct epoll_event events[MAX_EVENTS];
-
-    while (true) {
-        // 检查定时器队列，关闭超时连接
-        // while (!timerQueue.empty()) {
-        //     Timer *timer = timerQueue.top();
-        //     if (std::chrono::steady_clock::now() >= timer->expiry) {
-        //         int close_fd = timer->fd;
-        //         epoll_ctl(epollFd, EPOLL_CTL_DEL, close_fd, nullptr);
-        //         close(close_fd);
-        //         std::cout << "Connection timed out and closed" << std::endl;
-        //         timerQueue.pop();
                 
-        //     } else {
-        //         // auto time_out = timer->expiry - std::chrono::steady_clock::now();
-        //         break; // 因为小根堆中的定时器是按时间排序的，所以可以提前退出循环
-        //     }
-        // }
-
-
-       
-        int numEvents = epoll_wait(epollFd, events, MAX_EVENTS, time_out);
-
-        for (int i = 0; i < numEvents; ++i) {
-            if (events[i].data.fd == serverSocket) {
-                // 新的客户端连接请求
-                int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
-                Timer *timer =new Timer();
-                timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(TIMEOUT); // 60秒超时
-                timer->fd = clientSocket;
-                timerQueue.push(timer);
-                (users[clientSocket]).init(epollFd,clientSocket,timer,IS_ET);
-                
-                std::cout << "Accepted new connection from "
-                          << inet_ntoa(clientAddr.sin_addr)
-                          << ":" << ntohs(clientAddr.sin_port) << std::endl;
-
-                // 创建并添加定时器，模拟超时关闭
-                
-            } else if(events[i].events & EPOLLIN) {
-                // 客户端有数据可读
-                int fd_ = events[i].data.fd;
-                users[fd_].timer->expiry = std::chrono::steady_clock::now() + std::chrono::seconds(TIMEOUT);
-                users[fd_].read();
-                // int bytesRead = recv(fd_, buffer, BUFFER_SIZE, 0);
-
-                // if (bytesRead <= 0) {
-                //     // 客户端关闭连接
-                //     epoll_ctl(epollFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-                //     close(events[i].data.fd);
-                //     std::cout << "Connection closed" << std::endl;
-                // } else {
-                //     // 回显客户端发送的数据
-                //     send(events[i].data.fd, buffer, bytesRead, 0);
-                // }
+             
+            }
+            else if(event & EPOLLOUT){
+                // write fd
+                continue;
             }
         }
-
-        
     }
+}
 
-    // 关闭监听套接字和 epoll 实例
-    close(serverSocket);
-    close(epollFd);
+void myServer::readHandler(HttpConn& httpconn)
+{
+    int size = 0;
+    int total_size = 0;
+    assert(httpconn.fd >0);
+    while(1){
+        size = recv(httpconn.fd,httpconn.readBuf+total_size,HttpConn::READ_BUFFER-1,0);
+        if(size<=0){
+            if (size==0){
+                closeHandler(httpconn);
+            }
+            else{
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                printf("read later\n");
+                // 这些错误表示当前没有数据可读，可以继续等待
+                closeHandler(httpconn); // 关闭连接
+               
+                // sleep(1);
+                } else {
+                    // 处理其他错误，可能需要关闭连接
+                    perror("recv error");
+                    closeHandler(httpconn); // 关闭连接
+                }
+            }
+            break;
+        }
+        else{
+            total_size += size;
+            // requestParser.parse(readBuf);
+            // std::cout << requestParser.getMethod() << " " << requestParser.getResource() << " " << requestParser.getBody() << std::endl;
+            std::string s = "<head><body>Here is index page</body></head>";
+            httpconn.requestResponser.init(200,s);
+            // // std::cout << "Get data " << readBuf <<std::endl;
+            // // 回显客户端发送的数据
+            send(httpconn.fd, (char *)httpconn.requestResponser.toString().c_str(),httpconn.requestResponser.toString().size(), 0);
+            // send(fd, this->readBuf, size, 0);
+            printf("get content %d bytes from %d\n",size,httpconn.fd);
+            // break;
+        }
+    }
+}
 
-    return 0;
+void myServer::connHandler()
+{
+    struct sockaddr_in clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
+    int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
+    users[clientSocket].init(clientSocket,nullptr);
+    assert(clientSocket!=-1);
+    if(epoller->addFd(clientSocket, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT)==false){
+        std::cout << strerror(errno) << std::endl;
+    }
+    // 非阻塞
+    fcntl(clientSocket, F_SETFL, fcntl(clientSocket, F_GETFL, 0) | O_NONBLOCK);
+    printf("new conn %d\n",clientSocket);
+}
+
+void myServer::writeHandler()
+{
+}
+
+void myServer::closeHandler(HttpConn& httpconn)
+{
+    
+    if(epoller->delFd(httpconn.fd)==false){
+         std::cout << "close errno " << strerror(errno) << std::endl;
+    }
+    httpconn.Close();
+    printf("close fd %d\n",httpconn.fd);
+}
+
+int main(){
+    myServer server = myServer(12349,8,0);
+    server.start();
 }
