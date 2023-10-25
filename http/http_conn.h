@@ -7,6 +7,7 @@
 #include<unistd.h>
 #include<sys/socket.h>
 #include<cstring>
+#include<unordered_set>
 #include "../timer/time_heap.h"
 #include "http_request.h"
 #include "http_response.h"
@@ -19,7 +20,7 @@ public:
     static const int READ_BUFFER = 2048;
     static const int WRITE_BUFFER = 2048;
 private:
-    
+    static const std::unordered_set<std::string> DEFAULT_HTML;
     
     
 public:
@@ -35,7 +36,7 @@ public:
     void Write();   
 
 public:
-
+    
     char readBuf[READ_BUFFER];
     char writeBuf[WRITE_BUFFER];
 

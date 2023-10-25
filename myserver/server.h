@@ -27,7 +27,7 @@ public:
     void start();
     void readHandler(HttpConn& httpconn);
     void connHandler();
-    void writeHandler();
+    void writeHandler(HttpConn& httpconn);
     void closeHandler(HttpConn& httpconn);
 
 

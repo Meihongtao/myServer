@@ -2,16 +2,24 @@
 #include<vector>
 #include<map>
 #include<string>
-
+#include<sys/mman.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<iostream>
+#include<unistd.h>
+#include<filesystem>
 class HttpResponse{
 
 public:
     HttpResponse(){};
     void init(int statusCode, const std::string& body);
-
+    bool resourceCheck(std::string path);
+    bool makeContent(std::string path,int code);
     std::string toString() const;
+    
 
 private:
+    std::string PATH = "../static_resources/";
     int statusCode;
     std::string body;
     std::map<std::string, std::string> headers;
