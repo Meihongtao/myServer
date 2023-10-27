@@ -37,6 +37,9 @@ bool myServer::initListen()
     serverAddr.sin_port = htons(12349);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
+    int enable_reuse = 1;
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &enable_reuse, sizeof(int));
+    
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
         std::cerr << "Failed to bind socket" << std::endl;
         return false;
@@ -112,45 +115,6 @@ void myServer::readHandler(HttpConn& httpconn)
         closeHandler(httpconn);
     } 
     
-    
-   
-    
-    
-    // while(1){
-    //     size = recv(httpconn.fd,httpconn.readBuf+total_size,HttpConn::READ_BUFFER-1,0);
-    //     if(size<=0){
-    //         if (size==0){
-    //             closeHandler(httpconn);
-    //         }
-    //         else{
-    //             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-    //             printf("read later\n");
-    //             // 这些错误表示当前没有数据可读，可以继续等待
-    //             closeHandler(httpconn); // 关闭连接
-               
-    //             // sleep(1);
-    //             } else {
-    //                 // 处理其他错误，可能需要关闭连接
-    //                 perror("recv error");
-    //                 closeHandler(httpconn); // 关闭连接
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     else{
-    //         total_size += size;
-    //         // requestParser.parse(readBuf);
-    //         // std::cout << requestParser.getMethod() << " " << requestParser.getResource() << " " << requestParser.getBody() << std::endl;
-    //         std::string s = "<head><body>Here is index page</body></head>";
-    //         httpconn.requestResponser.init(200,s);
-    //         // // std::cout << "Get data " << readBuf <<std::endl;
-    //         // // 回显客户端发送的数据
-    //         send(httpconn.fd, (char *)httpconn.requestResponser.toString().c_str(),httpconn.requestResponser.toString().size(), 0);
-    //         // send(fd, this->readBuf, size, 0);
-    //         printf("get content %d bytes from %d\n",size,httpconn.fd);
-    //         // break;
-    //     }
-    // }
 }
 
 void myServer::connHandler()
@@ -190,7 +154,7 @@ void myServer::closeHandler(HttpConn& httpconn)
 }
 
 int main(){
-    myServer server = myServer(12349,8,0);
+    myServer server = myServer(12349,8,0,3306, "root", "12345678", "mydb",12);
     char buffer[2048]; // 用于存储目录路径的缓冲区，PATH_MAX 是一个宏，定义了最大路径长度
     if (getcwd(buffer, sizeof(buffer)) != NULL) {
         std::cout << "当前工作目录: " << buffer << std::endl;

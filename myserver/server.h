@@ -18,10 +18,12 @@ int HttpConn::user_count = 0;
 
 class myServer{
 public:
-    myServer(int port,int threadnums,int timeout):timeout(timeout),port(port),threadnums(threadnums){
+    myServer(int port,int threadnums,int timeout,int sqlPort, const char* sqlUser, const  char* sqlPwd,
+            const char* dbName, int connPoolNum):timeout(timeout),port(port),threadnums(threadnums){
         epoller =  std::make_unique<EpollController>();
         pool = std::make_unique<ThreadPool>(threadnums);
         initListen();
+        SqlPool::getInstance()->Init("localhost",sqlPort,sqlUser,sqlPwd,dbName,connPoolNum);
     };
     bool initListen();
     void start();

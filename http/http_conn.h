@@ -1,5 +1,5 @@
-#ifndef HTTPCONN_H
-#define HTTPCONN_H
+#ifndef HTTP_CONN_H
+#define HTTP_CONN_H
 
 #include<iostream>
 #include<sys/epoll.h>
@@ -7,10 +7,11 @@
 #include<unistd.h>
 #include<sys/socket.h>
 #include<cstring>
-#include<unordered_set>
-#include "../timer/time_heap.h"
+
 #include "http_request.h"
 #include "http_response.h"
+#include "../timer/time_heap.h"
+
 
 
 class HttpConn{
@@ -20,7 +21,6 @@ public:
     static const int READ_BUFFER = 2048;
     static const int WRITE_BUFFER = 2048;
 private:
-    static const std::unordered_set<std::string> DEFAULT_HTML;
     
     
 public:
@@ -34,7 +34,7 @@ public:
     int Read(int &Error);
     // 响应资源
     void Write();   
-
+    
 public:
     
     char readBuf[READ_BUFFER];

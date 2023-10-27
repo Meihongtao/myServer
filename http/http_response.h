@@ -12,16 +12,17 @@ class HttpResponse{
 
 public:
     HttpResponse(){};
-    void init(int statusCode, const std::string& body);
+    void init(int statusCode, const std::string& body,const std::string resource);
     bool resourceCheck(std::string path);
-    bool makeContent(std::string path,int code);
+    bool makeContent();
     std::string toString() const;
     
 
 private:
     std::string PATH = "../static_resources/";
     int statusCode;
-    std::string body;
+    std::string resource;
+    std::string body,message;
     std::map<std::string, std::string> headers;
 
     static std::string getStatusMessage(int statusCode) {

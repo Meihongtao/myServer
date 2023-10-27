@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send POST Request with Fetch API</title>
+</head>
+<body>
+    <h1>Send POST Request with Fetch API</h1>
+    
+    <form id="myForm" enctype="application/x-www-form-urlencoded" method="post" action="login" >
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="JohnDoe">
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" value="secretpassword">
+        <br>
+        <button type="submit" id="customButton">Submit</button>
+    </form>
+    
+    <p id="output"></p>
+
+    <script>
+        // document.getElementById("customButton").addEventListener("click", function() {
+        //     var form = document.getElementById("myForm");
+        //     var formData = new FormData(form);
+            
+        //     fetch("login", {
+        //         method: "POST",
+        //         body: formData,
+        //         headers:{"enctype":"application/x-www-form-urlencoded"}
+        //     })
+        //     .then(response => response.json()) // 解析响应为JSON格式（根据需要更改）
+        //     .then(data => {
+        //         // 处理服务器响应
+        //         document.getElementById("output").textContent = "Server Response: " + JSON.stringify(data);
+        //     })
+        //     .catch(error => {
+        //         console.error("POST Request Error: " + error);
+        //     });
+        // });
+    </script>
+</body>
+</html>
