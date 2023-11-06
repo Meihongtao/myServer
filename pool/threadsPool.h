@@ -1,16 +1,16 @@
 #ifndef THREADSPOOL_H
 #define THREADSPOOL_H
 
+#include <iostream>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <vector>
+#include <thread>
+#include <condition_variable>
 
-#include<iostream>
-#include<functional>
-#include<mutex>
-#include<queue>
-#include<vector>
-#include<thread>
-#include<condition_variable>
-
-class ThreadPool{
+class ThreadPool
+{
 private:
     std::vector<std::thread> m_threads;
     std::queue<std::function<void()>> m_queue;
@@ -20,14 +20,14 @@ private:
     // static ThreadPool *pool;
     bool stop;
 
-    
-   
-
 public:
-    ThreadPool(int thread_num):stop(false),m_thread_num(thread_num){
-        int i =0;
-        for(i=0;i<thread_num;i++){
-            m_threads.emplace_back([this,i]{
+    ThreadPool(int thread_num) : stop(false), m_thread_num(thread_num)
+    {
+        int i = 0;
+        for (i = 0; i < thread_num; i++)
+        {
+            m_threads.emplace_back([this, i]
+                                   {
                 printf("Thread %d created !\n",i+1);
                 
                 while(true){
@@ -49,12 +49,11 @@ public:
                     }                 
                     // 执行
                     func();
-                }
-            });
+                } });
         }
     }
 
-    ThreadPool(const ThreadPool& ) = delete;
+    ThreadPool(const ThreadPool &) = delete;
 
     // static ThreadPool *getInstance(int num){
     //     if(pool == NULL){
@@ -63,29 +62,40 @@ public:
     //     return pool;
     // }
 
-    template<typename Func, typename... Args>
-    void addTask(Func&& F,Args&& ...args){
+    template <typename Func, typename... Args>
+    void addTask(Func &&F, Args &&...args)
+    {
         {
             std::unique_lock<std::mutex> lock(m_mtx);
-            m_queue.emplace([=]{
-                F(args...);
-            });
+            m_queue.emplace([=]{ F(args...); });
         }
         m_condition.notify_one();
     }
 
-    ~ThreadPool(){
-         {
+    ~ThreadPool()
+    {
+        {
             std::unique_lock<std::mutex> lock(m_mtx);
             stop = true;
         }
         m_condition.notify_all();
-        for (std::thread& thread : m_threads) {
+        for (std::thread &thread : m_threads)
+        {
             thread.join();
         }
     }
-    
-};
 
+    void Close(){
+        {
+            std::unique_lock<std::mutex> lock(m_mtx);
+            stop = true;
+        }
+        m_condition.notify_all();
+        for (std::thread &thread : m_threads)
+        {
+            thread.join();
+        }
+    }
+};
 
 #endif

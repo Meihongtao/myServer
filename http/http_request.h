@@ -1,15 +1,15 @@
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
-#include<iostream>
-#include<string>
-#include<cstring>
-#include<unordered_map>
-#include<vector>
-#include<mysql/mysql.h>
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <unordered_map>
+#include <vector>
+#include <mysql/mysql.h>
 
-#include<unordered_set>
-#include<sstream>
+#include <unordered_set>
+#include <sstream>
 #include "../pool/sql_pool.h"
 
 // class myTriplet{
@@ -36,13 +36,20 @@ class HttpRequestParser
 {
 
 public:
-    enum action {LOGIN=0,REGISTER};
+    enum action
+    {
+        LOGIN = 0,
+        REGISTER
+    };
     static const std::unordered_set<std::string> DEFAULT_HTML;
-    static const std::unordered_map<std::string,action> ACTION_MAPPING;
+    static const std::unordered_map<std::string, action> ACTION_MAPPING;
     bool parse(const std::string &httpRequest);
     HttpRequestParser() : state(HttpRequestState::METHOD){};
+    void init();
+    int byteReads = 0;
     bool postHandler();
     bool getHandler();
+    bool isKeepAlive() const;
     std::string getMethod()
     {
         return method;
@@ -53,23 +60,21 @@ public:
         return path;
     }
 
-    std::string getBody(){
+    std::string getBody()
+    {
         return body;
     }
 
 private:
-
     void parse_request_header(const std::string &request_headline);
     void parse_request_body(const std::string &request_bodyline);
     void parse_request_line(const std::string &request_line);
     void parseHeaderLine(const std::string &line);
-    bool Login(std::string username,std::string password);
-    bool Register(std::string username,std::string password);
-    
+    bool Login(std::string username, std::string password);
+    bool Register(std::string username, std::string password);
+   
 
 private:
-    
-   
     HttpRequestState state;
     // 方法
     std::string method;
