@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欢迎页面</title>
+    <style>
+        body {
+            /* margin: 0;
+            padding: 0; */
+            height: 100%;
+            /* display: flex; */
+            /* align-items: center;
+            justify-content: center; */
+            /* background-color: transparent; */
+            /* transition: background 2s ease-in-out; */
+            font-family: 'Times New Roman';
+            z-index: -3;
+        }
+
+        #login {
+            border-radius: 20px;
+            border-color: aquamarine;
+            border: solid 2px;
+            background-color: white;
+            padding: 10px;
+            position: absolute;
+            z-index: 999;
+            display: none;
+            width: 20%;
+            height: 20%;
+        }
+
+        button {
+            font-family: 'Times New Roman', sans-serif;
+        }
+
+        .btn-normal,
+        .btn-danger {
+            background-color: blanchedalmond;
+            border: solid 2px;
+            border-radius: 5px;
+
+        }
+
+        .btn-normal:hover {
+            border: solid 2px;
+            border-radius: 5px;
+            background-color: white;
+        }
+
+        .btn-danger:hover {
+            border: solid black 2px;
+            border-radius: 5px;
+            background-color: deeppink;
+            color: white;
+
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(250, 0, 0, 0.3);
+            z-index: -1;
+        }
+
+        .btn-group {
+            position: relative;
+            top: 50%;
+            bottom: 10%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login">
+        <p>Account <input type="text" id="account"></input> </p>
+        <p>Password <input type="password" id="password"></input></p>
+        <p><button class="btn-danger" id="log_cancel">Cancel</button> <button class="btn-normal" id="login_">Login</button></p>
+    </div>
+
+    <div id="overlay"></div>
+    <div class="btn-group">
+        <p><button class="btn-normal" id="loginBtn"> Login</button></p>
+        <p><button class="btn-normal" id="registerBtn"> Register</button></p>
+    </div>
+
+
+
+    <script src="jquery.min.js"></script>
+    <script>
+      
+        function jsonToFormUrlEncoded(jsonData) {
+          let urlEncoded = "";
+          for (const key in jsonData) {
+            if (jsonData.hasOwnProperty(key)) {
+              if (urlEncoded.length > 0) {
+                urlEncoded += "&";
+              }
+              urlEncoded += encodeURIComponent(key) + "=" + encodeURIComponent(jsonData[key]);
+            }
+          }
+          return urlEncoded;
+        }
+        $(document).ready(function () {
+            // 直接使用 jQuery 的 css 函数设置背景颜色
+            $("body").css("background-color", "#031634");
+
+
+            $("#loginBtn").click(function () {
+                $("#loginBtn").hide();
+                $("#registerBtn").hide();
+                $("#overlay").fadeIn(300);
+                $("#login").fadeIn(300);
+            });
+
+            // 关闭弹窗
+            $("#log_cancel, #overlay").click(function () {
+                $("#overlay").fadeOut(300);
+                $("#login").fadeOut(300, function () {
+                    $("#loginBtn").show();
+                    $("#registerBtn").show();
+                });
+
+            });
+        });
+
+        var isDragging = false;
+
+        // 鼠标按下事件
+        $('#login').on('mousedown', function (e) {
+            isDragging = true;
+            $(this).css('cursor', 'grabbing'); // 设置鼠标样式为抓取中手势
+
+            // 记录鼠标按下时的初始坐标
+            var initialX = e.clientX;
+            var initialY = e.clientY;
+
+            // 鼠标移动事件
+            $(document).on('mousemove', function (e) {
+                if (isDragging) {
+                    // 计算鼠标的移动距离
+                    var offsetX = e.clientX - initialX;
+                    var offsetY = e.clientY - initialY;
+
+                    // 更新元素的位置
+                    $('#login').css({
+                        'left': '+=' + offsetX,
+                        'top': '+=' + offsetY
+                    });
+
+                    // 更新初始坐标
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+                }
+            });
+
+            // 鼠标释放事件
+            $(document).on('mouseup', function () {
+                isDragging = false;
+                $(document).off('mousemove mouseup');
+                $('#login').css('cursor', 'grab');
+            });
+        });
+        function logEvent() {
+            data = {}
+            data["user"] = document.getElementById("account").value
+            data["password"] = document.getElementById("password").value
+
+            data = jsonToFormUrlEncoded(data);
+
+            console.log(data);
+            $.ajax({
+                type: "POST",
+                url: "/Login",
+                contentType: "application/x-www-form-urlencoded",// 设置Content-Type
+                data: data,
+                success: function (response) {
+                    console.log(response)
+                    if (response === "success") {
+                        
+                        alert("Login success!")
+
+                    } else {
+                        alert("Login failed. Please check your credentials.");
+                    }
+                },
+                error: function () {
+                    alert("Login request failed. Please try again.");
+                },
+
+            });
+        };
+        var login_action = document.getElementById("login_");
+        login_action.addEventListener("click", logEvent);
+
+    </script>
+</body>
+
+</html>
