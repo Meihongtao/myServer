@@ -30,9 +30,9 @@ public:
 
         initListen();
         SqlPool::getInstance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);
-        AsyncLogger &logger = AsyncLogger::getInstance();
+        // AsyncLogger &logger = AsyncLogger::getInstance();
 
-        logger.startLogging("../log.txt");
+        // logger.startLogging("../log.txt");
     };
     ~myServer();
     bool initListen();
@@ -53,5 +53,5 @@ private:
     std::unique_ptr<HeapTimer> heapTimer;
     std::unique_ptr<EpollController> epoller;
     std::unique_ptr<ThreadPool> pool;
-    HttpConn *users = new HttpConn[100000];
+    HttpConn *users = new HttpConn[10000];
 };

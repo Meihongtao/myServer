@@ -64,15 +64,12 @@ void myServer::start()
     {
         
         timeMs = heapTimer->GetNextTick();
-        
-        
         int num = epoller->Wait(timeMs);
         if (num == -1)
         {
             printf("epoll wait error!\n");
             break;
         }
-        // printf("num = %d\n",num);
         for (int i = 0; i < num; i++)
         {
             int fd = epoller->getFd(i);
@@ -83,21 +80,15 @@ void myServer::start()
             }
             else if (event & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
             {
-                // close fd
-                // printf("in EPOLLRDHUP\n");
                 closeHandler(users[fd]);
             }
             else if (event & EPOLLIN)
             {
-                // readHandler(users[fd]);
                 pool->addTask([this, fd]()
                               { readHandler(users[fd]); });
             }
             else if (event & EPOLLOUT)
             {
-                // writeHandler(users[fd]);
-                // write fd
-                // writeHandler(users[fd]);
                 pool->addTask([this, fd]()
                               { writeHandler(users[fd]); });
             }
@@ -107,7 +98,7 @@ void myServer::start()
 
 void myServer::extentTime(HttpConn &httpconn)
 {
-    if(TIMEOUT_MS > 0) { heapTimer->adjust(httpconn.fd, TIMEOUT_MS);}
+    // if(TIMEOUT_MS > 0) { heapTimer->adjust(httpconn.fd, TIMEOUT_MS);}
 }
 
 void myServer::Process(HttpConn &httpconn)
@@ -129,20 +120,17 @@ void myServer::readHandler(HttpConn &httpconn)
     assert(httpconn.fd > 0);
     extentTime(httpconn);
     size = httpconn.Read(errno_);
-    if (size < 0)
+    if (size <= 0)
     {
         if (errno != EAGAIN)
         {
             // 出现错误
             closeHandler(httpconn);
             return;
-            // epoller->modFd(httpconn.fd, EPOLLOUT | EPOLLET | EPOLLONESHOT);
-            // printf("read later %d\n",httpconn.fd);
+          
         }
         else if (size == 0)
         {
-            // 客户端关闭连接，需要关闭套接字
-            // printf("close fd %d size=0\n",httpconn.fd);
             closeHandler(httpconn);
             return;
         }
@@ -163,27 +151,18 @@ void myServer::connHandler()
         }
         // if(clientSocket >= 10000)
         if(clientSocket >= 10000){
-            AsyncLogger::getInstance().log(LogLevel::WARNING,clientSocket + "connection refused !");
+           
             continue;
         }else{
-            users[clientSocket].init(clientSocket,nullptr);  
-            if (epoller->addFd(clientSocket, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT) == false)
-            {
-                // std::cout << strerror(errno) << std::endl;
-                // AsyncLogger::getInstance().log(LogLevel::ERROR,strerror(errno));
-            }
-            else{
-                // std::stringstream ss;
-                // ss << "new connection " << clientSocket;
-                // AsyncLogger::getInstance().log(LogLevel::INFO,ss.str());
-                printf("add timer for fd %d\n",clientSocket);
-                heapTimer->add(clientSocket,TIMEOUT_MS,std::bind(&myServer::closeHandler,this,users[clientSocket]));
-            }
-            // 非阻塞
+            users[clientSocket].init(clientSocket,nullptr); 
+            // heapTimer->add(clientSocket,TIMEOUT_MS,std::bind(&myServer::closeHandler,this,users[clientSocket]));
+            
+            epoller->addFd(clientSocket, EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT);
+            //非阻塞
             fcntl(clientSocket, F_SETFL, fcntl(clientSocket, F_GETFL, 0) | O_NONBLOCK);
         }
         
-        // printf("new conn %d\n",clientSocket);
+
     } while (true);
 }
 
@@ -192,24 +171,18 @@ void myServer::writeHandler(HttpConn &httpconn)
     int ret = -1;
     int writeErrno = 0;
     extentTime(httpconn);
-    // printf("in write handler\n");
     ret = httpconn.Write(writeErrno);
     if (httpconn.toWriteBytes() == 0)
     {
         /* 传输完成 */
         closeHandler(httpconn);
         return;
-        // if(httpconn.isKeepAlive()) {
-        //     Process(httpconn);
-        //     return;
-        // }
     }
     else if (ret < 0)
     {
         if (writeErrno == EAGAIN)
         {
             /* 继续传输 */
-            // printf("write eagain\n");
             epoller->modFd(httpconn.fd, EPOLLET | EPOLLONESHOT | EPOLLOUT);
             return;
         }
@@ -220,17 +193,10 @@ void myServer::writeHandler(HttpConn &httpconn)
 void myServer::closeHandler(HttpConn &httpconn)
 {
 
-    if(httpconn.isClose == false){
-        if (epoller->delFd(httpconn.fd) == false)
-        {
-            std::cout << "close errno " << strerror(errno) << std::endl;
-            AsyncLogger::getInstance().log(LogLevel::ERROR,"close httpconn error!");
-            return;
-        }
-    } 
-    printf("fd %d ready close\n",httpconn.fd);
-    httpconn.Close();
-    // printf("close fd %d\n",httpconn.fd);
+    
+    epoller->delFd(httpconn.fd);
+    int ret = httpconn.Close();
+
 }
 
 myServer::~myServer()
@@ -238,7 +204,7 @@ myServer::~myServer()
     
     delete [] users;
     SqlPool::getInstance()->closePool();
-    AsyncLogger::getInstance().stopLogging();
+    // AsyncLogger::getInstance().stopLogging();
 }
 
 

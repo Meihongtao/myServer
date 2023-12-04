@@ -86,9 +86,10 @@ void HeapTimer::del_(size_t index) {
 
 void HeapTimer::adjust(int id, int timeout) {
     /* 调整指定id的结点 */
-    assert(!heap_.empty() && ref_.count(id) > 0);
-    heap_[ref_[id]].expires = Clock::now() + MS(timeout);;
-    siftdown_(ref_[id], heap_.size());
+    if(!heap_.empty() && ref_.count(id) > 0){
+        heap_[ref_[id]].expires = Clock::now() + MS(timeout);;
+        siftdown_(ref_[id], heap_.size());
+    }
 }
 
 void HeapTimer::tick() {
@@ -118,7 +119,7 @@ void HeapTimer::clear() {
 
 int HeapTimer::GetNextTick() {
     tick();
-    printf("%d\n",heap_.size());
+    // printf("%d\n",heap_.size());
     size_t res = -1;
     if(!heap_.empty()) {
         res = std::chrono::duration_cast<MS>(heap_.front().expires - Clock::now()).count();

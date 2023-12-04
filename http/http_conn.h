@@ -24,10 +24,10 @@ public:
 
 private:
 public:
-    HttpConn(){};
+    HttpConn(){fd=-1;isClose=true;};
     ~HttpConn();
     void init(int fd_, TimerNode *timer_);
-    void Close();
+    int Close();
     // 接收请求处理并回复客户端
     bool process();
 

@@ -19,12 +19,13 @@ class HttpResponse{
 public:
     HttpResponse(){};
     ~HttpResponse();
-    void init(std::string resouces, bool isKeepAlive, int code);
+    void init(std::string resouces, bool isKeepAlive, int code,std::string method,std::string message);
     bool resourceCheck(std::string path);
     // bool addHeader(std::string &buf);
     void addStateLine(std::string & buf);
     void addHeader(std::string &buf);
     void addContent(std::string &buf);
+    void unmapFile();
     bool isKeepAlive;
     void MakeResponse(std::string &buf);
     char* getFile();
@@ -36,6 +37,8 @@ private:
     std::string PATH = "../static_resources/";
     int statusCode;
     std::string resource;
+    std::string method;
+    std::string message;
     // std::string body,message;
     // 文件指针
     char* mmFile; 

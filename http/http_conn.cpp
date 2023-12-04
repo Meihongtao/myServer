@@ -4,6 +4,7 @@
 
 HttpConn::~HttpConn()
 {
+
 }
 
 void HttpConn::init(int fd_, TimerNode *timer_)
@@ -20,10 +21,13 @@ void HttpConn::init(int fd_, TimerNode *timer_)
     isClose = false;
 }
 
-void HttpConn::Close()
+int HttpConn::Close()
 {
-    if(fd>3 && isClose == false){
+    this->requestResponser.unmapFile();
+    if(isClose == false){
+        isClose = true; 
         HttpConn::user_count -= 1;
+        timer = nullptr;
         close(fd);
     }
 }
@@ -39,10 +43,6 @@ bool HttpConn::process()
     }
     requestParser.init();
     requestParser.parse(readBuf);
-    // std::cout << readBuf << std::endl;
-    // std::cout << requestParser.getMethod() << " " << requestParser.getResource() << " " << requestParser.getBody() << std::endl;
-    // std::string s = "<head><body>Here is index page</body></head>";
-    // requestResponser.init(200,s);
     resource = requestParser.getResource();
     if (requestParser.getMethod() == "POST")
     {
@@ -55,7 +55,6 @@ bool HttpConn::process()
         {
             message = "faild";
         }
-        std::cout << ret << std::endl;
     }
     else if (requestParser.getMethod() == "GET")
     {
@@ -76,9 +75,8 @@ bool HttpConn::process()
         }
     }
 
-    requestResponser.init(resource, requestParser.isKeepAlive(), 200);
+    requestResponser.init(resource, requestParser.isKeepAlive(), 200,requestParser.getMethod(),message);
     requestResponser.MakeResponse(writeBuf);
-
     /* 响应头 */
     iov[0].iov_base = (char *)writeBuf.c_str();
     iov[0].iov_len = writeBuf.size();
@@ -92,16 +90,7 @@ bool HttpConn::process()
         iov[1].iov_len = requestResponser.getFileLen();
         iov_count = 2;
     }
-    // LOG_DEBUG("filesize:%d, %d  to %d", response_.FileLen() , iovCnt_, ToWriteBytes());
-    // return true;
 
-    // requestResponser.init(statuscode,message,resource);
-    // requestResponser.makeContent();
-    // send(fd, (char *)requestResponser.toString().c_str(),requestResponser.toString().size(), 0);
-    // // std::cout << "Get data " << readBuf <<std::endl;
-    // // 回显客户端发送的数据
-
-    // send(fd, this->readBuf, size, 0);
     return true;
 }
 
@@ -136,6 +125,7 @@ int HttpConn::Write(int &writeError)
     int size = -1;
     while (1)
     {
+
         size = writev(fd, iov, iov_count);
         if (size <= 0)
         {

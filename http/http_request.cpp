@@ -2,11 +2,15 @@
 
 const std::unordered_set<std::string> HttpRequestParser::DEFAULT_HTML{
     "/index",
+    "/index2",
     "/video",
     "/picture",
+    "/error",
+    "/default",
 };
 const std::unordered_map<std::string, HttpRequestParser::action> HttpRequestParser::ACTION_MAPPING{
     {"/Login", HttpRequestParser::action::LOGIN}, {"/Register", HttpRequestParser::action::REGISTER}};
+
 
 void HttpRequestParser::init(){
     method = path = body = queryString = "";

@@ -60,7 +60,9 @@ HttpResponse::~HttpResponse()
     }
 }
 
-void HttpResponse::init(std::string resource_, bool isKeepAlive, int code)
+
+
+void HttpResponse::init(std::string resource_, bool isKeepAlive, int code, std::string method, std::string message)
 {
     if (resource_ == "")
     {
@@ -74,6 +76,8 @@ void HttpResponse::init(std::string resource_, bool isKeepAlive, int code)
     statusCode = code;
     isKeepAlive = isKeepAlive;
     resource = resource_;
+    this->method = method;
+    this->message = message;
 
     mmFile = nullptr;
     mmFileStat = {0};
@@ -137,14 +141,14 @@ void HttpResponse::MakeResponse(std::string &buff)
 {
     /* 判断请求的资源文件 */
     buff.clear();
-    if (stat((PATH + resource).c_str(), &mmFileStat) < 0 || S_ISDIR(mmFileStat.st_mode))
+    if ((stat((PATH + resource).c_str(), &mmFileStat) < 0 || S_ISDIR(mmFileStat.st_mode)) && this->method=="GET")
     {
         statusCode = 404;
     }
-    else if (!(mmFileStat.st_mode & S_IROTH))
-    {
-        statusCode = 403;
-    }
+    // else if (!(mmFileStat.st_mode & S_IROTH))
+    // {
+    //     statusCode = 403;
+    // }
     else if (statusCode == -1)
     {
         statusCode = 200;
@@ -158,14 +162,17 @@ void HttpResponse::MakeResponse(std::string &buff)
 void HttpResponse::addContent(std::string &buff)
 {
 
-    // this->statusCode = code;
-    // printf("%s\n", (PATH + resource).c_str());
+    
+    if(this->method == "POST"){
+        buff += "Content-length: " + std::to_string(this->message.size()) + "\r\n\r\n";
+        buff += this->message;
+        return;
+    }
     // 打开文件以供读取
-    // if (std::filesystem::exists((PATH + resource).c_str()))
     int srcFd = open((PATH + resource).c_str(), O_RDONLY);
     if (srcFd < 0)
     {
-        printf("srcFd File NotFound!\n");
+        // printf("srcFd File NotFound!\n");
         AsyncLogger::getInstance().log(LogLevel::ERROR, PATH + resource + " Not Found");
         return;
     }
@@ -185,6 +192,15 @@ void HttpResponse::addContent(std::string &buff)
     mmFile = (char *)mmRet;
     close(srcFd);
     buff += "Content-length: " + std::to_string(mmFileStat.st_size) + "\r\n\r\n";
+    
+}
+
+void HttpResponse::unmapFile()
+{
+    if(mmFile) {
+        munmap(mmFile, mmFileStat.st_size);
+        mmFile = nullptr;
+    }
 }
 
 char *HttpResponse::getFile()
